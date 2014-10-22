@@ -19,10 +19,10 @@ struct DrawElementsIndirectCommand {
 	{}
 };
 
-//Our two "models" packed into a single buffer, really just two tris w/ different colors
+//Our two "models" packed into a single buffer, really just two tris
 const std::array<glm::vec3, 6> triangles_verts{
 	//The first "model", lower left tri
-	glm::vec3{-1.f, -1.f, 0.f},	glm::vec3{1.f, -1.f, 0.f}, glm::vec3{-1.f, 1.f, 0.f},
+	glm::vec3{-1.f, -1.f, 0.f}, glm::vec3{1.f, -1.f, 0.f}, glm::vec3{-1.f, 1.f, 0.f},
 	//The second "model", upper right tri
 	glm::vec3{1.f, -1.f, 0.f}, glm::vec3{1.f, 1.f, 0.f}, glm::vec3{-1.f, 1.f, 0.f}
 };
