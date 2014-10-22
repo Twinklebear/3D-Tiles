@@ -20,16 +20,18 @@ struct DrawElementsIndirectCommand {
 };
 
 //Our two "models" packed into a single buffer, really just two tris
-const std::array<glm::vec3, 6> triangles_verts{
+const std::array<glm::vec3, 9> triangles_verts{
 	//The first "model", lower left tri
 	glm::vec3{-1.f, -1.f, 0.f}, glm::vec3{1.f, -1.f, 0.f}, glm::vec3{-1.f, 1.f, 0.f},
-	//The second "model", upper right tri
-	glm::vec3{1.f, -1.f, 0.f}, glm::vec3{1.f, 1.f, 0.f}, glm::vec3{-1.f, 1.f, 0.f}
+	//The second "model", a small quad
+	glm::vec3{0.1f, 0.1f, 0.f}, glm::vec3{0.6f, 0.1f, 0.f}, glm::vec3{0.1f, 0.6f, 0.f},
+	glm::vec3{0.6f, 0.1f, 0.f}, glm::vec3{0.6f, 0.6f, 0.f}, glm::vec3{0.1f, 0.6f, 0.f}
 };
 //The element buffers for both "models" packed into one buffer
-const std::array<GLushort, 6> triangles_indices{
+const std::array<GLushort, 9> triangles_indices{
 	0, 1, 2,
-	3, 4, 5
+	3, 4, 5,
+	6, 7, 8
 };
 //Our attributes buffer for the two instances of our "models"
 const std::array<glm::vec3, 2> triangle_attribs{
@@ -109,7 +111,7 @@ int main(int, char**){
 
 	std::array<DrawElementsIndirectCommand, 2> draw_commands{
 		DrawElementsIndirectCommand{3, 1, 0, 0, 0},
-		DrawElementsIndirectCommand{3, 1, 3, 0, 1}
+		DrawElementsIndirectCommand{6, 1, 3, 0, 1}
 	};
 	GLuint draw_cmd_buf;
 	glGenBuffers(1, &draw_cmd_buf);
