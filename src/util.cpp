@@ -405,7 +405,7 @@ bool util::load_obj(const std::string &fname,
 	ebo.reserve(n_elems + elem_offset);
 	ebo.map(GL_WRITE_ONLY);
 	for (size_t i = 0; i < indices.size(); ++i){
-		ebo.write<0>(i + elem_offset) = indices[i] + elem_offset;
+		ebo.write<0>(i + elem_offset) = indices[i] + vert_offset;
 	}
 	ebo.unmap();
 	return true;
