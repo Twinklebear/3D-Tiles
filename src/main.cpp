@@ -80,13 +80,13 @@ int main(int, char**){
 	const std::string model_path = util::get_resource_path("models");
 	PackedBuffer<glm::vec3, glm::vec3, glm::vec3> vbo{0, GL_ARRAY_BUFFER, GL_STATIC_DRAW, true};
 	PackedBuffer<GLushort> ebo{0, GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW, true};
-	size_t tri_verts = 0, tri_elems = 0;
-	if (!util::load_obj(model_path + "suzanne.obj", vbo, ebo, tri_elems, &tri_verts)){
+	size_t ma_verts = 0, ma_elems = 0;
+	if (!util::load_obj(model_path + "suzanne.obj", vbo, ebo, ma_elems, &ma_verts)){
 		std::cout << "Failed to load left triangle\n";
 		return 1;
 	}
-	size_t quad_verts = 0, quad_elems = 0;
-	if (!util::load_obj(model_path + "polyhedron.obj", vbo, ebo, quad_elems, &quad_verts, tri_verts, tri_elems)){
+	size_t mb_verts = 0, mb_elems = 0;
+	if (!util::load_obj(model_path + "polyhedron.obj", vbo, ebo, mb_elems, &mb_verts, ma_verts, ma_elems)){
 		std::cout << "Failed to load quad\n";
 		return 1;
 	}
@@ -118,14 +118,11 @@ int main(int, char**){
 		glVertexAttribDivisor(i, 1);
 	}
 
-	std::array<DrawElementsIndirectCommand, 2> draw_commands{
-		DrawElementsIndirectCommand{tri_elems, 1, 0, 0, 0},
-		DrawElementsIndirectCommand{quad_elems, 1, tri_elems, 0, 1}
-	};
-	GLuint draw_cmd_buf;
-	glGenBuffers(1, &draw_cmd_buf);
-	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, draw_cmd_buf);
-	glBufferData(GL_DRAW_INDIRECT_BUFFER, sizeof(draw_commands), draw_commands.data(), GL_STATIC_DRAW);
+	PackedBuffer<DrawElementsIndirectCommand> draw_commands{2, GL_DRAW_INDIRECT_BUFFER, GL_STATIC_DRAW};
+	draw_commands.map(GL_WRITE_ONLY);
+	draw_commands.write<0>(0) = DrawElementsIndirectCommand{ma_elems, 1, 0, 0, 0};
+	draw_commands.write<0>(1) = DrawElementsIndirectCommand{mb_elems, 1, ma_elems, 0, 1};
+	draw_commands.unmap();
 
 	SDL_Event e;
 	bool quit = false;
@@ -137,14 +134,14 @@ int main(int, char**){
 		}
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_SHORT, NULL, 2, sizeof(DrawElementsIndirectCommand));
+		glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_SHORT, NULL,
+				draw_commands.size(), draw_commands.stride());
 
 		SDL_GL_SwapWindow(win);
 	}
 
 	glDeleteProgram(shader);
 	glDeleteVertexArrays(1, &vao);
-	glDeleteBuffers(1, &draw_cmd_buf);
 
 	SDL_GL_DeleteContext(context);
 	SDL_DestroyWindow(win);
