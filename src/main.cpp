@@ -79,9 +79,7 @@ int main(int, char**){
 		std::cout << "Failed to load left triangle\n";
 		return 1;
 	}
-	std::cout << "tri_verts = " << tri_verts << ", tri_elems = " << tri_elems
-		<< ", quad_verts = " << quad_verts << ", quad_elems = " << quad_elems
-		<< std::endl;
+
 	GLuint vao;
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
