@@ -2,6 +2,7 @@
 #include <string>
 #include <SDL.h>
 #include <glm/glm.hpp>
+#include <glm/ext.hpp>
 #include "gl_core_4_4.h"
 #include "util.h"
 
@@ -66,16 +67,31 @@ int main(int, char**){
 	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
 #endif
 
+	STD140Buffer<glm::mat4> viewing{2, GL_UNIFORM_BUFFER, GL_STATIC_DRAW};
+	viewing.map(GL_WRITE_ONLY);
+	viewing.write<0>(0) = glm::lookAt(glm::vec3{0.f, 0.f, 5.f}, glm::vec3{0.f, 0.f, 0.f},
+		glm::vec3{0.f, 1.f, 0.f});
+	viewing.write<0>(1) = glm::perspective(util::deg_to_rad(75.f), 640.f / 480.f, 1.f, 100.f);
+	viewing.unmap();
+
+	const std::string shader_path = util::get_resource_path("shaders");
+	GLuint shader = util::load_program({std::make_tuple(GL_VERTEX_SHADER, shader_path + "vmdei_test.glsl"),
+		std::make_tuple(GL_FRAGMENT_SHADER, shader_path + "fmdei_test.glsl")});
+	glUseProgram(shader);
+	GLuint viewing_block = glGetUniformBlockIndex(shader, "Viewing");
+	glUniformBlockBinding(shader, viewing_block, 0);
+	viewing.bind_base(0);
+
 	const std::string model_path = util::get_resource_path("models");
-	InterleavedBuffer<Layout::PACKED, glm::vec3, glm::vec3, glm::vec3> vbo{0, GL_ARRAY_BUFFER, GL_STATIC_DRAW, true};
-	InterleavedBuffer<Layout::PACKED, GLushort> ebo{0, GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW, true};
+	PackedBuffer<glm::vec3, glm::vec3, glm::vec3> vbo{0, GL_ARRAY_BUFFER, GL_STATIC_DRAW, true};
+	PackedBuffer<GLushort> ebo{0, GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW, true};
 	size_t tri_verts = 0, tri_elems = 0;
-	if (!util::load_obj(model_path + "left_tri.obj", vbo, ebo, tri_elems, &tri_verts)){
+	if (!util::load_obj(model_path + "suzanne.obj", vbo, ebo, tri_elems, &tri_verts)){
 		std::cout << "Failed to load left triangle\n";
 		return 1;
 	}
 	size_t quad_verts = 0, quad_elems = 0;
-	if (!util::load_obj(model_path + "quad.obj", vbo, ebo, quad_elems, &quad_verts, tri_verts, tri_elems)){
+	if (!util::load_obj(model_path + "polyhedron.obj", vbo, ebo, quad_elems, &quad_verts, tri_verts, tri_elems)){
 		std::cout << "Failed to load quad\n";
 		return 1;
 	}
@@ -84,26 +100,28 @@ int main(int, char**){
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 
-	//Vertex buffer, element buffer and instance attribute buffer
-	GLuint attribs;
-	glGenBuffers(1, &attribs);
-
 	vbo.bind();
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vbo.stride(), 0);
 
 	ebo.bind();
 
-	glBindBuffer(GL_ARRAY_BUFFER, attribs);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(triangle_attribs), triangle_attribs.data(), GL_STATIC_DRAW);
+	PackedBuffer<glm::vec3, glm::mat4> attribs{2, GL_ARRAY_BUFFER, GL_STATIC_DRAW};
+	attribs.map(GL_WRITE_ONLY);
+	attribs.write<0>(0) = glm::vec3{1.f, 0.f, 0.f};
+	attribs.write<1>(0) = glm::translate(glm::vec3{-2.f, 0.f, 0.f});
+	attribs.write<0>(1) = glm::vec3{0.f, 0.f, 1.f};
+	attribs.write<1>(1) = glm::translate(glm::vec3{2.f, 0.f, 0.f});
+	attribs.unmap();
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, attribs.stride(), 0);
 	glVertexAttribDivisor(1, 1);
-
-	const std::string shader_path = util::get_resource_path("shaders");
-	GLuint shader = util::load_program({std::make_tuple(GL_VERTEX_SHADER, shader_path + "vmdei_test.glsl"),
-		std::make_tuple(GL_FRAGMENT_SHADER, shader_path + "fmdei_test.glsl")});
-	glUseProgram(shader);
+	for (int i = 2; i < 6; ++i){
+		glEnableVertexAttribArray(i);
+		glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, attribs.stride(),
+			(void*)(attribs.offset(1) + (i - 2) * sizeof(glm::vec4)));
+		glVertexAttribDivisor(i, 1);
+	}
 
 	std::array<DrawElementsIndirectCommand, 2> draw_commands{
 		DrawElementsIndirectCommand{tri_elems, 1, 0, 0, 0},
@@ -132,7 +150,6 @@ int main(int, char**){
 	glDeleteProgram(shader);
 	glDeleteVertexArrays(1, &vao);
 	glDeleteBuffers(1, &draw_cmd_buf);
-	glDeleteBuffers(1, &attribs);
 
 	SDL_GL_DeleteContext(context);
 	SDL_DestroyWindow(win);
