@@ -76,7 +76,7 @@ int main(int, char**){
 	}
 	size_t quad_verts = 0, quad_elems = 0;
 	if (!util::load_obj(model_path + "quad.obj", vbo, ebo, quad_elems, &quad_verts, tri_verts, tri_elems)){
-		std::cout << "Failed to load left triangle\n";
+		std::cout << "Failed to load quad\n";
 		return 1;
 	}
 
