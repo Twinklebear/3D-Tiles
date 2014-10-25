@@ -322,10 +322,8 @@ void util::gldebug_callback(GLenum src, GLenum type, GLuint, GLenum severity,
 	}
 	std::cerr << "\n\tMessage: " << msg << "\n";
 }
-bool util::load_obj(const std::string &fname,
-	InterleavedBuffer<Layout::PACKED, glm::vec3, glm::vec3, glm::vec3> &vbo,
-	InterleavedBuffer<Layout::PACKED, GLushort> &ebo, size_t &n_elems,
-	size_t *n_verts, size_t vert_offset, size_t elem_offset)
+bool util::load_obj(const std::string &fname, PackedBuffer<glm::vec3, glm::vec3, glm::vec3> &vbo,
+	PackedBuffer<GLushort> &ebo, size_t &n_elems, size_t *n_verts, size_t vert_offset, size_t elem_offset)
 {
 	std::ifstream file(fname);
 	if (!file.is_open()){

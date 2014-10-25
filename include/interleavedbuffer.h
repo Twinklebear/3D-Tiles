@@ -398,5 +398,10 @@ private:
 	}
 };
 
+template<typename... Args>
+using PackedBuffer = InterleavedBuffer<Layout::PACKED, Args...>;
+template<typename... Args>
+using STD140Buffer = InterleavedBuffer<Layout::STD140, Args...>;
+
 #endif
 

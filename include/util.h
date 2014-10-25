@@ -79,10 +79,9 @@ namespace util {
 	* returns true on success, false on failure
 	* TODO: Take any buffer layout?
 	*/
-	bool load_obj(const std::string &fname,
-		InterleavedBuffer<Layout::PACKED, glm::vec3, glm::vec3, glm::vec3> &vbo,
-		InterleavedBuffer<Layout::PACKED, GLushort> &ebo, size_t &n_elems,
-		size_t *n_verts = nullptr, size_t vert_offset = 0, size_t elem_offset = 0);
+	bool load_obj(const std::string &fname, PackedBuffer<glm::vec3, glm::vec3, glm::vec3> &vbo,
+		PackedBuffer<GLushort> &ebo, size_t &n_elems, size_t *n_verts = nullptr,
+		size_t vert_offset = 0, size_t elem_offset = 0);
 	/*
 	* Functions to get values from formatted strings, for use in reading the
 	* model file
