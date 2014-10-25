@@ -20,11 +20,6 @@ struct DrawElementsIndirectCommand {
 	{}
 };
 
-//Our attributes buffer for the two instances of our "models"
-const std::array<glm::vec3, 2> triangle_attribs{
-	glm::vec3{1.f, 0.f, 0.f}, glm::vec3{0.f, 0.f, 1.f}
-};
-
 int main(int, char**){
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0){
 		std::cerr << "SDL_Init error: " << SDL_GetError() << "\n";
