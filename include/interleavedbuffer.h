@@ -251,6 +251,7 @@ public:
 			assert(i < capacity && mode == GL_READ_WRITE);
 		}
 		PtrTuple t;
+		//TODO: Use std::integer_sequence here for C++14
 		at(i, t, typename detail::GenSequence<sizeof...(Args)>::seq{});
 		return t;
 	}

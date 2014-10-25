@@ -72,13 +72,17 @@ namespace util {
 	/*
 	* Load an OBJ model file into the vbo and ebo passed in
 	* The model must have vertex, texture and normal data and be a triangle mesh
+	* n_verts: optional out parameter to get the number of vertices written to the vbo passed
+	* vert_offset: optionally specify the index in the vbo to start writing the model
+	* elem_offset: optionally specify the index in the ebo to start writing model indices
 	* The vbo elems are: vec3 pos, vec3 normal, vec3 uv
 	* returns true on success, false on failure
 	* TODO: Take any buffer layout?
 	*/
 	bool load_obj(const std::string &fname,
 		InterleavedBuffer<Layout::PACKED, glm::vec3, glm::vec3, glm::vec3> &vbo,
-		InterleavedBuffer<Layout::PACKED, GLushort> &ebo, size_t &n_elems);
+		InterleavedBuffer<Layout::PACKED, GLushort> &ebo, size_t &n_elems,
+		size_t *n_verts = nullptr, size_t vert_offset = 0, size_t elem_offset = 0);
 	/*
 	* Functions to get values from formatted strings, for use in reading the
 	* model file

@@ -19,20 +19,6 @@ struct DrawElementsIndirectCommand {
 	{}
 };
 
-//Our two "models" packed into a single buffer, really just two tris
-const std::array<glm::vec3, 9> triangles_verts{
-	//The first "model", lower left tri
-	glm::vec3{-1.f, -1.f, 0.f}, glm::vec3{1.f, -1.f, 0.f}, glm::vec3{-1.f, 1.f, 0.f},
-	//The second "model", a small quad
-	glm::vec3{0.1f, 0.1f, 0.f}, glm::vec3{0.6f, 0.1f, 0.f}, glm::vec3{0.1f, 0.6f, 0.f},
-	glm::vec3{0.6f, 0.1f, 0.f}, glm::vec3{0.6f, 0.6f, 0.f}, glm::vec3{0.1f, 0.6f, 0.f}
-};
-//The element buffers for both "models" packed into one buffer
-const std::array<GLushort, 9> triangles_indices{
-	0, 1, 2,
-	3, 4, 5,
-	6, 7, 8
-};
 //Our attributes buffer for the two instances of our "models"
 const std::array<glm::vec3, 2> triangle_attribs{
 	glm::vec3{1.f, 0.f, 0.f}, glm::vec3{0.f, 0.f, 1.f}
@@ -80,23 +66,35 @@ int main(int, char**){
 	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
 #endif
 
+	const std::string model_path = util::get_resource_path("models");
+	InterleavedBuffer<Layout::PACKED, glm::vec3, glm::vec3, glm::vec3> vbo{0, GL_ARRAY_BUFFER, GL_STATIC_DRAW, true};
+	InterleavedBuffer<Layout::PACKED, GLushort> ebo{0, GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW, true};
+	size_t tri_verts = 0, tri_elems = 0;
+	if (!util::load_obj(model_path + "left_tri.obj", vbo, ebo, tri_elems, &tri_verts)){
+		std::cout << "Failed to load left triangle\n";
+		return 1;
+	}
+	size_t quad_verts = 0, quad_elems = 0;
+	if (!util::load_obj(model_path + "quad.obj", vbo, ebo, quad_elems, &quad_verts, tri_verts, tri_elems)){
+		std::cout << "Failed to load left triangle\n";
+		return 1;
+	}
+	std::cout << "tri_verts = " << tri_verts << ", tri_elems = " << tri_elems
+		<< ", quad_verts = " << quad_verts << ", quad_elems = " << quad_elems
+		<< std::endl;
 	GLuint vao;
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 
 	//Vertex buffer, element buffer and instance attribute buffer
-	GLuint vbo, ebo, attribs;
-	glGenBuffers(1, &vbo);
-	glGenBuffers(1, &ebo);
+	GLuint attribs;
 	glGenBuffers(1, &attribs);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(triangles_verts), triangles_verts.data(), GL_STATIC_DRAW);
+	vbo.bind();
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vbo.stride(), 0);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(triangles_indices), triangles_indices.data(), GL_STATIC_DRAW);
+	ebo.bind();
 
 	glBindBuffer(GL_ARRAY_BUFFER, attribs);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(triangle_attribs), triangle_attribs.data(), GL_STATIC_DRAW);
@@ -110,8 +108,8 @@ int main(int, char**){
 	glUseProgram(shader);
 
 	std::array<DrawElementsIndirectCommand, 2> draw_commands{
-		DrawElementsIndirectCommand{3, 1, 0, 0, 0},
-		DrawElementsIndirectCommand{6, 1, 3, 0, 1}
+		DrawElementsIndirectCommand{tri_elems, 1, 0, 0, 0},
+		DrawElementsIndirectCommand{quad_elems, 1, tri_elems, 0, 1}
 	};
 	GLuint draw_cmd_buf;
 	glGenBuffers(1, &draw_cmd_buf);
@@ -136,8 +134,6 @@ int main(int, char**){
 	glDeleteProgram(shader);
 	glDeleteVertexArrays(1, &vao);
 	glDeleteBuffers(1, &draw_cmd_buf);
-	glDeleteBuffers(1, &vbo);
-	glDeleteBuffers(1, &ebo);
 	glDeleteBuffers(1, &attribs);
 
 	SDL_GL_DeleteContext(context);

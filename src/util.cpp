@@ -256,11 +256,11 @@ bool util::log_glerror(const std::string &msg){
 	return false;
 }
 #if _MSC_VER
-void APIENTRY util::gldebug_callback(GLenum src, GLenum type, GLuint id, GLenum severity,
-	GLsizei len, const GLchar *msg, const GLvoid *user)
+void APIENTRY util::gldebug_callback(GLenum src, GLenum type, GLuint, GLenum severity,
+	GLsizei, const GLchar *msg, const GLvoid*)
 #else
-void util::gldebug_callback(GLenum src, GLenum type, GLuint id, GLenum severity,
-	GLsizei len, const GLchar *msg, const GLvoid *user)
+void util::gldebug_callback(GLenum src, GLenum type, GLuint, GLenum severity,
+	GLsizei, const GLchar *msg, const GLvoid*)
 #endif
 {
 	//Print a time stamp for the message
@@ -324,7 +324,8 @@ void util::gldebug_callback(GLenum src, GLenum type, GLuint id, GLenum severity,
 }
 bool util::load_obj(const std::string &fname,
 	InterleavedBuffer<Layout::PACKED, glm::vec3, glm::vec3, glm::vec3> &vbo,
-	InterleavedBuffer<Layout::PACKED, GLushort> &ebo, size_t &n_elems)
+	InterleavedBuffer<Layout::PACKED, GLushort> &ebo, size_t &n_elems,
+	size_t *n_verts, size_t vert_offset, size_t elem_offset)
 {
 	std::ifstream file(fname);
 	if (!file.is_open()){
@@ -388,19 +389,23 @@ bool util::load_obj(const std::string &fname,
 			}
 		}
 	}
-	vbo.reserve(vert_data.size() / 3);
+	vbo.reserve(vert_data.size() / 3 + vert_offset);
 	vbo.map(GL_WRITE_ONLY);
 	for (size_t i = 0; i < vert_data.size() / 3; ++i){
-		vbo.write<0>(i) = vert_data[3 * i];
-		vbo.write<1>(i) = vert_data[3 * i + 1];
-		vbo.write<2>(i) = vert_data[3 * i + 2];
+		vbo.write<0>(i + vert_offset) = vert_data[3 * i];
+		vbo.write<1>(i + vert_offset) = vert_data[3 * i + 1];
+		vbo.write<2>(i + vert_offset) = vert_data[3 * i + 2];
 	}
 	vbo.unmap();
+	if (n_verts){
+		*n_verts = vert_data.size() / 3;
+	}
+
 	n_elems = indices.size();
-	ebo.reserve(n_elems);
+	ebo.reserve(n_elems + elem_offset);
 	ebo.map(GL_WRITE_ONLY);
 	for (size_t i = 0; i < indices.size(); ++i){
-		ebo.write<0>(i) = indices[i];
+		ebo.write<0>(i + elem_offset) = indices[i] + elem_offset;
 	}
 	ebo.unmap();
 	return true;
