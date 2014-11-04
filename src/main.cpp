@@ -116,7 +116,7 @@ int main(int, char**){
 	for (int i = 3; i < 7; ++i){
 		glEnableVertexAttribArray(i);
 		glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, attribs.stride(),
-			(void*)(attribs.offset(1) + (i - 3) * sizeof(glm::vec4)));
+			reinterpret_cast<void*>(attribs.offset(1) + (i - 3) * sizeof(glm::vec4)));
 		glVertexAttribDivisor(i, 1);
 	}
 
