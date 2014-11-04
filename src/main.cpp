@@ -99,7 +99,7 @@ int main(int, char**){
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vbo.stride(), 0);
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, vbo.stride(), (void*)vbo.offset(1));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, vbo.stride(), reinterpret_cast<void*>(vbo.offset(1)));
 
 	ebo.bind();
 
