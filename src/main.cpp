@@ -64,7 +64,7 @@ int main(int, char**){
 
 	STD140Buffer<glm::mat4> viewing{2, GL_UNIFORM_BUFFER, GL_STATIC_DRAW};
 	viewing.map(GL_WRITE_ONLY);
-	viewing.write<0>(0) = glm::lookAt(glm::vec3{0.f, 0.f, 5.f}, glm::vec3{0.f, 0.f, 0.f},
+	viewing.write<0>(0) = glm::lookAt(glm::vec3{0.f, 4.f, 5.f}, glm::vec3{0.f, 0.f, 0.f},
 		glm::vec3{0.f, 1.f, 0.f});
 	viewing.write<0>(1) = glm::perspective(util::deg_to_rad(75.f), 640.f / 480.f, 1.f, 100.f);
 	viewing.unmap();
@@ -81,12 +81,12 @@ int main(int, char**){
 	PackedBuffer<glm::vec3, glm::vec3, glm::vec3> vbo{0, GL_ARRAY_BUFFER, GL_STATIC_DRAW, true};
 	PackedBuffer<GLushort> ebo{0, GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW, true};
 	size_t ma_verts = 0, ma_elems = 0;
-	if (!util::load_obj(model_path + "suzanne.obj", vbo, ebo, ma_elems, &ma_verts)){
+	if (!util::load_obj(model_path + "dented_tile.obj", vbo, ebo, ma_elems, &ma_verts)){
 		std::cout << "Failed to load left triangle\n";
 		return 1;
 	}
 	size_t mb_verts = 0, mb_elems = 0;
-	if (!util::load_obj(model_path + "polyhedron.obj", vbo, ebo, mb_elems, &mb_verts, ma_verts, ma_elems)){
+	if (!util::load_obj(model_path + "spike_tile.obj", vbo, ebo, mb_elems, &mb_verts, ma_verts, ma_elems)){
 		std::cout << "Failed to load quad\n";
 		return 1;
 	}
@@ -98,23 +98,25 @@ int main(int, char**){
 	vbo.bind();
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vbo.stride(), 0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, vbo.stride(), (void*)vbo.offset(1));
 
 	ebo.bind();
 
 	PackedBuffer<glm::vec3, glm::mat4> attribs{2, GL_ARRAY_BUFFER, GL_STATIC_DRAW};
 	attribs.map(GL_WRITE_ONLY);
 	attribs.write<0>(0) = glm::vec3{1.f, 0.f, 0.f};
-	attribs.write<1>(0) = glm::translate(glm::vec3{-2.f, 0.f, 0.f});
+	attribs.write<1>(0) = glm::translate(glm::vec3{-1.f, 0.f, 0.f});
 	attribs.write<0>(1) = glm::vec3{0.f, 0.f, 1.f};
-	attribs.write<1>(1) = glm::translate(glm::vec3{2.f, 0.f, 0.f});
+	attribs.write<1>(1) = glm::translate(glm::vec3{1.f, 0.f, 0.f});
 	attribs.unmap();
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, attribs.stride(), 0);
-	glVertexAttribDivisor(1, 1);
-	for (int i = 2; i < 6; ++i){
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, attribs.stride(), 0);
+	glVertexAttribDivisor(2, 1);
+	for (int i = 3; i < 7; ++i){
 		glEnableVertexAttribArray(i);
 		glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, attribs.stride(),
-			(void*)(attribs.offset(1) + (i - 2) * sizeof(glm::vec4)));
+			(void*)(attribs.offset(1) + (i - 3) * sizeof(glm::vec4)));
 		glVertexAttribDivisor(i, 1);
 	}
 

@@ -7,13 +7,14 @@ layout(std140) uniform Viewing {
 };
 
 layout(location = 0) in vec3 pos;
-layout(location = 1) in vec3 color;
-layout(location = 2) in mat4 model;
+layout(location = 1) in vec3 normal;
+layout(location = 2) in vec3 color;
+layout(location = 3) in mat4 model;
 
 out vec3 fcolor;
 
 void main(void){
-	fcolor = color;
+	fcolor = color + normal * vec3(0.5);
 	gl_Position = proj * view * model * vec4(pos, 1);
 }
 
