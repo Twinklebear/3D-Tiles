@@ -8,5 +8,5 @@ Current Rendering Status
 ---
 The tiles are drawn with a single multi draw indirect call.
 
-![Some tiles drawn with one multi draw indirect call](http://i.imgur.com/JhrA4Gk.png)
+![Some tiles drawn with one multi draw indirect call](http://i.imgur.com/tie04Bq.png)
 
