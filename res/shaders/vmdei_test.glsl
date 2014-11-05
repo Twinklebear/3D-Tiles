@@ -14,7 +14,7 @@ layout(location = 3) in mat4 model;
 out vec3 fcolor;
 
 void main(void){
-	fcolor = color + normal * vec3(0.5);
+	fcolor = color + 0.5 * normal;
 	gl_Position = proj * view * model * vec4(pos, 1);
 }
 
