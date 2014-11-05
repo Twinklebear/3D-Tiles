@@ -103,12 +103,23 @@ int main(int, char**){
 
 	ebo.bind();
 
-	PackedBuffer<glm::vec3, glm::mat4> attribs{2, GL_ARRAY_BUFFER, GL_STATIC_DRAW};
+	PackedBuffer<glm::vec3, glm::mat4> attribs{6, GL_ARRAY_BUFFER, GL_STATIC_DRAW};
 	attribs.map(GL_WRITE_ONLY);
+	//The dented tiles
 	attribs.write<0>(0) = glm::vec3{1.f, 0.f, 0.f};
 	attribs.write<1>(0) = glm::translate(glm::vec3{-1.f, 0.f, 0.f});
-	attribs.write<0>(1) = glm::vec3{0.f, 0.f, 1.f};
-	attribs.write<1>(1) = glm::translate(glm::vec3{1.f, 0.f, 0.f});
+	attribs.write<0>(1) = glm::vec3{1.f, 0.f, 1.f};
+	attribs.write<1>(1) = glm::translate(glm::vec3{1.f, 0.f, -2.f});
+	attribs.write<0>(2) = glm::vec3{1.f, 0.f, 1.f};
+	attribs.write<1>(2) = glm::translate(glm::vec3{-1.f, 0.f, 2.f})
+		* glm::rotate(util::deg_to_rad(90), glm::vec3{0, 1, 0});
+	//The pointed tiles
+	attribs.write<0>(3) = glm::vec3{0.f, 0.f, 1.f};
+	attribs.write<1>(3) = glm::translate(glm::vec3{1.f, 0.f, 0.f});
+	attribs.write<0>(4) = glm::vec3{1.f, 1.f, 0.f};
+	attribs.write<1>(4) = glm::translate(glm::vec3{-1.f, 0.f, -2.f});
+	attribs.write<0>(5) = glm::vec3{1.f, 0.f, 0.f};
+	attribs.write<1>(5) = glm::translate(glm::vec3{1.f, 0.f, 2.f});
 	attribs.unmap();
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, attribs.stride(), 0);
@@ -122,17 +133,58 @@ int main(int, char**){
 
 	PackedBuffer<DrawElementsIndirectCommand> draw_commands{2, GL_DRAW_INDIRECT_BUFFER, GL_STATIC_DRAW};
 	draw_commands.map(GL_WRITE_ONLY);
-	draw_commands.write<0>(0) = DrawElementsIndirectCommand{ma_elems, 1, 0, 0, 0};
-	draw_commands.write<0>(1) = DrawElementsIndirectCommand{mb_elems, 1, ma_elems, 0, 1};
+	//We're drawing two of the first tile type and 3 of the second
+	draw_commands.write<0>(0) = DrawElementsIndirectCommand{ma_elems, 3, 0, 0, 0};
+	draw_commands.write<0>(1) = DrawElementsIndirectCommand{mb_elems, 3, ma_elems, 0, 3};
 	draw_commands.unmap();
 
 	SDL_Event e;
-	bool quit = false;
+	bool quit = false, view_change = false;
+	int view_pos = 0;
 	while (!quit){
 		while (SDL_PollEvent(&e)){
-			if (e.type == SDL_QUIT || (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)){
+			if (e.type == SDL_QUIT){
 				quit = true;
 			}
+			else if (e.type == SDL_KEYDOWN){
+				switch (e.key.keysym.sym){
+					case SDLK_d:
+						view_pos = (view_pos + 1) % 4;
+						view_change = true;
+						break;
+					case SDLK_a:
+						view_pos = view_pos == 0 ? 3 : (view_pos - 1) % 4;
+						view_change = true;
+						break;
+					case SDLK_ESCAPE:
+						quit = true;
+						break;
+					default:
+						break;
+				}
+			}
+		}
+		if (view_change){
+			view_change = false;
+			glm::vec3 eye_pos;
+			switch (view_pos){
+				case 1:
+					eye_pos = glm::vec3{5, 4, 0};
+					break;
+				case 2:
+					eye_pos = glm::vec3{0, 4, -5};
+					break;
+				case 3:
+					eye_pos = glm::vec3{-5, 4, 0};
+					break;
+				default:
+					eye_pos = glm::vec3{0, 4, 5};
+					break;
+			}
+			viewing.map(GL_WRITE_ONLY);
+			viewing.write<0>(0) = glm::lookAt(eye_pos, glm::vec3{0.f, 0.f, 0.f},
+				glm::vec3{0.f, 1.f, 0.f});
+			viewing.unmap();
 		}
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

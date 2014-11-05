@@ -8,5 +8,5 @@ Current Rendering Status
 ---
 The two tiles are drawn with a single multi draw indirect call.
 
-![Two 3d tiles drawn with one multi draw indirect](http://i.imgur.com/gjz4sS6.png)
+![Some tiles drawn with one multi draw indirect call](http://i.imgur.com/JhrA4Gk.png)
 
