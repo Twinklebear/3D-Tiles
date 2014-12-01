@@ -5,20 +5,7 @@
 #include <glm/ext.hpp>
 #include "gl_core_4_4.h"
 #include "util.h"
-
-/*
- * The OpenGL DrawElementsIndirectCommand struct described in the docs
- */
-struct DrawElementsIndirectCommand {
-	GLuint count, instance_count, first_index,
-		base_vertex, base_instance;
-
-	DrawElementsIndirectCommand(GLuint count, GLuint instance_count, GLuint first_index,
-		GLuint base_vertex, GLuint base_instance)
-		: count(count), instance_count(instance_count), first_index(first_index),
-		base_vertex(base_vertex), base_instance(base_instance)
-	{}
-};
+#include "multi_renderbatch.h"
 
 int main(int, char**){
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0){
