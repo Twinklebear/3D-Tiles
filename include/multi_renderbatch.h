@@ -83,7 +83,7 @@ MultiRenderBatch<Attribs...>::MultiRenderBatch(const std::vector<size_t> batch_c
 	const std::vector<size_t> &model_elem_offsets, PackedBuffer<glm::vec3, glm::vec3, glm::vec3> &&vbo,
 	PackedBuffer<GLushort> &&ebo)
 	: batch_capacities(batch_capacities), batch_sizes(batch_capacities.size(), 0), model_vbo(std::move(vbo)), model_ebo(std::move(ebo)),
-	attributes(std::accumulate(batch_capacities.begin(), batch_capacities.end(), GL_ARRAY_BUFFER, GL_STREAM_DRAW)),
+	attributes(std::accumulate(batch_capacities.begin(), batch_capacities.end(), 0), GL_ARRAY_BUFFER, GL_STREAM_DRAW),
 	draw_commands(batch_capacities.size(), GL_DRAW_INDIRECT_BUFFER, GL_STATIC_DRAW)
 {
 	batch_offsets.reserve(batch_capacities.size());
@@ -101,9 +101,10 @@ MultiRenderBatch<Attribs...>::MultiRenderBatch(const std::vector<size_t> batch_c
 
 	draw_commands.map(GL_WRITE_ONLY);
 	for (size_t i = 0; i < batch_capacities.size(); ++i){
-		draw_commands.write<0>(i) = DrawElementsIndirectCommand{model_elems[i], 0, model_elem_offsets[i], 0,
-			batch_offsets[i]};
+		draw_commands.write<0>(i) = DrawElementsIndirectCommand{static_cast<GLuint>(model_elems[i]), 0,
+			static_cast<GLuint>(model_elem_offsets[i]), 0, static_cast<GLuint>(batch_offsets[i])};
 	}
+	draw_commands.unmap();
 }
 template<typename... Attribs>
 InterleavedBuffer<Layout::PACKED, Attribs...>& MultiRenderBatch<Attribs...>::attrib_buf(){
@@ -111,7 +112,7 @@ InterleavedBuffer<Layout::PACKED, Attribs...>& MultiRenderBatch<Attribs...>::att
 }
 template<typename... Attribs>
 void MultiRenderBatch<Attribs...>::push_instance(size_t model, const std::tuple<Attribs...> &a){
-	assert(batch_sizes[model] + 1 < batch_capacities[model]);
+	assert(batch_sizes[model] + 1 <= batch_capacities[model]);
 	//Write the attribute for this new instance of the model and update batch size
 	attributes.map_range(batch_offsets[model] + batch_sizes[model], 1, GL_MAP_WRITE_BIT);
 	attributes.write(batch_offsets[model] + batch_sizes[model], a);
@@ -136,7 +137,7 @@ void MultiRenderBatch<Attribs...>::render(){
 	glBindVertexArray(vao);
 	draw_commands.bind();
 	glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_SHORT, NULL, draw_commands.size(),
-		draw_commands.size());
+		draw_commands.stride());
 }
 template<typename... Attribs>
 template<typename T>
@@ -189,7 +190,7 @@ void MultiRenderBatch<Attribs...>::set_attrib_index(){
 		}
 		glVertexAttribDivisor(i + indices[index], 1);
 		//Check that we didn't spill over into another attributes index space
-		if (i + indices[index] >= indices[index + 1]){
+		if (static_cast<int>(i) + indices[index] >= indices[index + 1]){
 			std::cerr << "MultiRenderBatch Warning: attribute " << indices[index]
 				<< " spilled over into attribute " << indices[index + 1] << std::endl;
 		}

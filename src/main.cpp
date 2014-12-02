@@ -80,52 +80,16 @@ int main(int, char**){
 		return 1;
 	}
 
-	GLuint vao;
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-
-	vbo.bind();
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vbo.stride(), 0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, vbo.stride(), reinterpret_cast<void*>(vbo.offset(1)));
-
-	ebo.bind();
-
-	PackedBuffer<glm::vec3, glm::mat4> attribs{6, GL_ARRAY_BUFFER, GL_STATIC_DRAW};
-	attribs.map(GL_WRITE_ONLY);
-	//The dented tiles
-	attribs.write<0>(0) = glm::vec3{1.f, 0.f, 0.f};
-	attribs.write<1>(0) = glm::translate(glm::vec3{-1.f, 0.f, 0.f});
-	attribs.write<0>(1) = glm::vec3{1.f, 0.f, 1.f};
-	attribs.write<1>(1) = glm::translate(glm::vec3{1.f, 0.f, -2.f});
-	attribs.write<0>(2) = glm::vec3{1.f, 0.f, 1.f};
-	attribs.write<1>(2) = glm::translate(glm::vec3{-1.f, 0.f, 2.f})
-		* glm::rotate(util::deg_to_rad(90), glm::vec3{0, 1, 0});
-	//The pointed tiles
-	attribs.write<0>(3) = glm::vec3{0.f, 0.f, 1.f};
-	attribs.write<1>(3) = glm::translate(glm::vec3{1.f, 0.f, 0.f});
-	attribs.write<0>(4) = glm::vec3{1.f, 1.f, 0.f};
-	attribs.write<1>(4) = glm::translate(glm::vec3{-1.f, 0.f, -2.f});
-	attribs.write<0>(5) = glm::vec3{1.f, 0.f, 0.f};
-	attribs.write<1>(5) = glm::translate(glm::vec3{1.f, 0.f, 2.f});
-	attribs.unmap();
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, attribs.stride(), 0);
-	glVertexAttribDivisor(2, 1);
-	for (int i = 3; i < 7; ++i){
-		glEnableVertexAttribArray(i);
-		glVertexAttribPointer(i, 4, GL_FLOAT, GL_FALSE, attribs.stride(),
-			reinterpret_cast<void*>(attribs.offset(1) + (i - 3) * sizeof(glm::vec4)));
-		glVertexAttribDivisor(i, 1);
-	}
-
-	PackedBuffer<DrawElementsIndirectCommand> draw_commands{2, GL_DRAW_INDIRECT_BUFFER, GL_STATIC_DRAW};
-	draw_commands.map(GL_WRITE_ONLY);
-	//We're drawing two of the first tile type and 3 of the second
-	draw_commands.write<0>(0) = DrawElementsIndirectCommand{ma_elems, 3, 0, 0, 0};
-	draw_commands.write<0>(1) = DrawElementsIndirectCommand{mb_elems, 3, ma_elems, 0, 3};
-	draw_commands.unmap();
+	MultiRenderBatch<glm::vec3, glm::mat4> tile_batches{{3, 3}, {ma_elems, mb_elems}, {0, ma_elems},
+		std::move(vbo), std::move(ebo)};
+	tile_batches.set_attrib_indices({2, 3});
+	tile_batches.push_instance(0, std::make_tuple(glm::vec3{1.f, 0.f, 0.f}, glm::translate(glm::vec3{-1.f, 0.f, 0.f})));
+	tile_batches.push_instance(0, std::make_tuple(glm::vec3{1.f, 0.f, 1.f}, glm::translate(glm::vec3{1.f, 0.f, -2.f})));
+	tile_batches.push_instance(0, std::make_tuple(glm::vec3{1.f, 0.f, 1.f}, glm::translate(glm::vec3{-1.f, 0.f, 2.f})
+		* glm::rotate(util::deg_to_rad(90), glm::vec3{0, 1, 0})));
+	tile_batches.push_instance(1, std::make_tuple(glm::vec3{0.f, 0.f, 1.f}, glm::translate(glm::vec3{1.f, 0.f, 0.f})));
+	tile_batches.push_instance(1, std::make_tuple(glm::vec3{1.f, 1.f, 0.f}, glm::translate(glm::vec3{-1.f, 0.f, -2.f})));
+	tile_batches.push_instance(1, std::make_tuple(glm::vec3{1.f, 0.f, 0.f}, glm::translate(glm::vec3{1.f, 0.f, 2.f})));
 
 	SDL_Event e;
 	bool quit = false, view_change = false;
@@ -177,14 +141,11 @@ int main(int, char**){
 		}
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_SHORT, NULL,
-				draw_commands.size(), draw_commands.stride());
+		tile_batches.render();
 
 		SDL_GL_SwapWindow(win);
 	}
-
 	glDeleteProgram(shader);
-	glDeleteVertexArrays(1, &vao);
 
 	SDL_GL_DeleteContext(context);
 	SDL_DestroyWindow(win);
