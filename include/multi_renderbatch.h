@@ -86,9 +86,13 @@ MultiRenderBatch<Attribs...>::MultiRenderBatch(const std::vector<size_t> batch_c
 	attributes(std::accumulate(batch_capacities.begin(), batch_capacities.end(), 0), GL_ARRAY_BUFFER, GL_STREAM_DRAW),
 	draw_commands(batch_capacities.size(), GL_DRAW_INDIRECT_BUFFER, GL_STATIC_DRAW)
 {
-	batch_offsets.reserve(batch_capacities.size());
-	batch_offsets.push_back(0);
-	std::copy(batch_capacities.begin(), batch_capacities.end() - 1, std::back_inserter(batch_offsets));
+	batch_offsets.resize(batch_capacities.size());
+	int cur_offset = 0;
+	for (size_t i = 0; i < batch_offsets.size(); ++i){
+		batch_offsets[i] = cur_offset;
+		cur_offset += batch_capacities[i];
+	}
+
 	//Hook up the model vao using the regular indices I use for position and normal
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
