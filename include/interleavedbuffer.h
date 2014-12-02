@@ -63,12 +63,14 @@ public:
 		}
 	}
 	~InterleavedBuffer(){
-		//If they forgot to unmap the buffer and we're the last one using it
-		if (data != nullptr){
-			bind(bound_target);
-			glUnmapBuffer(type);
+		if (buffer != 0){
+			//If they forgot to unmap the buffer and we're the last one using it
+			if (data != nullptr){
+				bind(bound_target);
+				glUnmapBuffer(type);
+			}
+			glDeleteBuffers(1, &buffer);
 		}
-		glDeleteBuffers(1, &buffer);
 	}
 	InterleavedBuffer(const InterleavedBuffer&) = delete;
 	InterleavedBuffer& operator=(const InterleavedBuffer&) = delete;
