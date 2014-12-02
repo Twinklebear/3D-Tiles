@@ -53,7 +53,7 @@ int main(int, char**){
 
 	STD140Buffer<glm::mat4> viewing{2, GL_UNIFORM_BUFFER, GL_STATIC_DRAW};
 	viewing.map(GL_WRITE_ONLY);
-	viewing.write<0>(0) = glm::lookAt(glm::vec3{0.f, 4.f, 5.f}, glm::vec3{0.f, 0.f, 0.f},
+	viewing.write<0>(0) = glm::lookAt(glm::vec3{0.f, 4.f, 8.f}, glm::vec3{0.f, 0.f, 0.f},
 		glm::vec3{0.f, 1.f, 0.f});
 	viewing.write<0>(1) = glm::perspective(util::deg_to_rad(75.f), 640.f / 480.f, 1.f, 100.f);
 	viewing.unmap();
@@ -69,27 +69,33 @@ int main(int, char**){
 	const std::string model_path = util::get_resource_path("models");
 	PackedBuffer<glm::vec3, glm::vec3, glm::vec3> vbo{0, GL_ARRAY_BUFFER, GL_STATIC_DRAW, true};
 	PackedBuffer<GLushort> ebo{0, GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW, true};
-	size_t ma_verts = 0, ma_elems = 0;
-	if (!util::load_obj(model_path + "dented_tile.obj", vbo, ebo, ma_elems, &ma_verts)){
-		std::cout << "Failed to load left triangle\n";
+	std::vector<size_t> num_verts(3), num_elems(3);
+	if (!util::load_obj(model_path + "dented_tile.obj", vbo, ebo, num_elems[0], &num_verts[0])){
+		std::cout << "Failed to load dented tile\n";
 		return 1;
 	}
-	size_t mb_verts = 0, mb_elems = 0;
-	if (!util::load_obj(model_path + "spike_tile.obj", vbo, ebo, mb_elems, &mb_verts, ma_verts, ma_elems)){
-		std::cout << "Failed to load quad\n";
+	if (!util::load_obj(model_path + "spike_tile.obj", vbo, ebo, num_elems[1], &num_verts[1], num_verts[0], num_elems[0])){
+		std::cout << "Failed to load spike tile\n";
+		return 1;
+	}
+	if (!util::load_obj(model_path + "big_tile.obj", vbo, ebo, num_elems[2], &num_verts[2],
+		num_verts[0] + num_verts[1], num_elems[0] + num_elems[1]))
+	{
+		std::cout << "Failed to load big tile\n";
 		return 1;
 	}
 
-	MultiRenderBatch<glm::vec3, glm::mat4> tile_batches{{3, 3}, {ma_elems, mb_elems}, {0, ma_elems},
+	MultiRenderBatch<glm::vec3, glm::mat4> tile_batches{{4, 4, 2}, num_elems, {0, num_elems[0], num_elems[0] + num_elems[1]},
 		std::move(vbo), std::move(ebo)};
 	tile_batches.set_attrib_indices({2, 3});
-	tile_batches.push_instance(0, std::make_tuple(glm::vec3{1.f, 0.f, 0.f}, glm::translate(glm::vec3{-1.f, 0.f, 0.f})));
-	tile_batches.push_instance(0, std::make_tuple(glm::vec3{1.f, 0.f, 1.f}, glm::translate(glm::vec3{1.f, 0.f, -2.f})));
-	tile_batches.push_instance(0, std::make_tuple(glm::vec3{1.f, 0.f, 1.f}, glm::translate(glm::vec3{-1.f, 0.f, 2.f})
+	tile_batches.push_instance(0, std::make_tuple(glm::vec3{1.f, 0.f, 0.f}, glm::translate(glm::vec3{-3.f, 0.f, 1.f})));
+	tile_batches.push_instance(0, std::make_tuple(glm::vec3{1.f, 0.f, 1.f}, glm::translate(glm::vec3{1.f, 0.f, -3.f})));
+	tile_batches.push_instance(0, std::make_tuple(glm::vec3{1.f, 0.f, 1.f}, glm::translate(glm::vec3{1.f, 0.f, 3.f})
 		* glm::rotate(util::deg_to_rad(90), glm::vec3{0, 1, 0})));
-	tile_batches.push_instance(1, std::make_tuple(glm::vec3{0.f, 0.f, 1.f}, glm::translate(glm::vec3{1.f, 0.f, 0.f})));
-	tile_batches.push_instance(1, std::make_tuple(glm::vec3{1.f, 1.f, 0.f}, glm::translate(glm::vec3{-1.f, 0.f, -2.f})));
-	tile_batches.push_instance(1, std::make_tuple(glm::vec3{1.f, 0.f, 0.f}, glm::translate(glm::vec3{1.f, 0.f, 2.f})));
+	tile_batches.push_instance(1, std::make_tuple(glm::vec3{0.f, 0.f, 1.f}, glm::translate(glm::vec3{3.f, 0.f, 1.f})));
+	tile_batches.push_instance(1, std::make_tuple(glm::vec3{1.f, 1.f, 0.f}, glm::translate(glm::vec3{-1.f, 0.f, -3.f})));
+	tile_batches.push_instance(1, std::make_tuple(glm::vec3{0.f, 0.f, 1.f}, glm::translate(glm::vec3{-3.f, 0.f, -1.f})));
+	tile_batches.push_instance(2, std::make_tuple(glm::vec3{1.f, 0.5f, 0.5f}, glm::translate(glm::vec3{0.f, 0.f, 0.f})));
 
 	SDL_Event e;
 	bool quit = false, view_change = false;
@@ -122,16 +128,16 @@ int main(int, char**){
 			glm::vec3 eye_pos;
 			switch (view_pos){
 				case 1:
-					eye_pos = glm::vec3{5, 4, 0};
+					eye_pos = glm::vec3{8, 4, 0};
 					break;
 				case 2:
-					eye_pos = glm::vec3{0, 4, -5};
+					eye_pos = glm::vec3{0, 4, -8};
 					break;
 				case 3:
-					eye_pos = glm::vec3{-5, 4, 0};
+					eye_pos = glm::vec3{-8, 4, 0};
 					break;
 				default:
-					eye_pos = glm::vec3{0, 4, 5};
+					eye_pos = glm::vec3{0, 4, 8};
 					break;
 			}
 			viewing.map(GL_WRITE_ONLY);
